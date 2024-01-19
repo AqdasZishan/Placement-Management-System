@@ -1,0 +1,33 @@
+<!-- sample.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Details</title>
+    <style>
+        /* Add your CSS here */
+    </style>
+</head>
+<body>
+    <div id="studentDetails"></div>
+    
+    <script>
+        window.onload = function () {
+            fetch('http://localhost:3000/students')
+                .then(response => response.json())
+                .then(data => {
+                    let studentDetails = document.getElementById('studentDetails');
+                    if (data.length === 0) {
+                        studentDetails.innerHTML = "<p>No students found.</p>";
+                    } else {
+                        studentDetails.innerHTML = "<h1>Student Details</h1>";
+                        data.forEach(student => {
+                            studentDetails.innerHTML += `<p>SysId: ${student.SysId}, Name: ${student.Name}</p>`;
+                            // Add other details as per your requirements
+                        });
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placement Drives</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+
+        .header {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .container{
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .drive-container{
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+        .drive {
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .drive h2 {
+            margin: 0;
+        }
+
+        .drive p {
+            margin: 10px 0;
+        }
+
+        button.apply-button {
+            background-color: #007BFF;
+            color: #fff;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 20px;
+        }
+
+        button.apply-button:hover {
+            background-color: #0056b3;
+        }
+
+        .performance {
+            display: none;
+            padding: 20px;
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Placement Drives</h1>
+    </div>
+    <div class="container">
+        <div class="drive-container" id="upcomingdrives">
+            <h2>Upcoming Placement Drives</h2>
+            <p id="no-upcomingdrives-data"></p>
+        </div>
+        <div class="drive-container" id="ongoingdrives">
+            <h2>Ongoing Placement Drives</h2>
+            <p id="no-ongoingdrives-data"></p>
+        </div>
+        <div class="drive-container" id="endeddrives">
+            <h2>Recently Ended Placement Drives</h2>
+            <p id="no-endeddrives-data"></p>
+        </div>
+    </div>
+    <script>
+        // Function to display the "No drives available" message
+        function displayNoDataMessage(containerId) {
+            const driveContainer = document.getElementById(containerId);
+            const noDataElement = document.getElementById(`no-${containerId}-data`);
+            noDataElement.textContent = 'No drives available.';
+            driveContainer.appendChild(noDataElement);
+        }
+
+        // Function to load and display drives in a specific container
+        async function loadAndDisplayDrives(containerId, route) {
+            try {
+                const response = await fetch(route);
+                const drives = await response.json();
+    
+                if (drives.length > 0) {
+                    const driveContainer = document.getElementById(containerId);
+    
+                    drives.forEach((drive) => {
+                        const driveElement = document.createElement('div');
+                        driveElement.classList.add('drive');
+
+                        // Format the Start Date and End Date
+                        const startDate = new Date(drive.startDate);
+                        const endDate = new Date(drive.endDate);
+                        const startDateString = `${startDate.getDate()}-${startDate.getMonth() + 1}-${startDate.getFullYear()}`;
+                        const endDateString = `${endDate.getDate()}-${endDate.getMonth() + 1}-${endDate.getFullYear()}`;
+
+
+                        driveElement.innerHTML = `
+                            <h2>${drive.name}</h2>
+                            <p>Start Date: ${startDateString}</p>
+                            <p>End Date: ${endDateString}</p>
+                            <p id="status">Status: Not Applied<p>
+                            <input type="file" class="resume-upload" style="display: none;">
+                        `;
+                        
+                        // Iterate through applications and display their status
+                        if (drive.applications && drive.applications.length > 0) {
+                            const applicationsStatus = driveElement.querySelector('#status'); // Corrected the variable name
+                            drive.applications.forEach((application) => {
+                                if (application.studentId == studentId) {
+                                    applicationsStatus.innerHTML = `Status: ${application.status}`;
+                                }
+                            });
+                        }
+
+                        if (drive.status === 'Upcoming'|| drive.status === 'Active') {
+                            const applyButton = document.createElement('button');
+                            applyButton.classList.add('apply-button');
+                            applyButton.textContent = 'Upload Resume and Apply';
+                            applyButton.addEventListener('click', () => uploadResume(drive._id));
+                            driveElement.appendChild(applyButton);
+                        }
+
+                        // Add a button to view performance for active and ended drives
+                        if (drive.status === 'Active' || drive.status === 'Ended') {
+                            const performanceButton = document.createElement('button');
+                            performanceButton.classList.add('apply-button');
+                            performanceButton.textContent = 'View Performance';
+                            performanceButton.addEventListener('click', () => {
+                                // Implement logic to show performance here
+                                alert('View performance for drive: ' + drive.name);
+                            });
+                            driveElement.appendChild(performanceButton);
+                        }
+    
+                        driveContainer.appendChild(driveElement);
+                    });
+                } else {
+                    /// Display the "No drives available" message
+                    displayNoDataMessage(containerId);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+        
+        // Function to get the user's ID (student ID) from the server
+        async function getUserId() {
+        try {
+            const response = await fetch('/profile'); // Assuming this endpoint returns the student's data, including ID
+            const data = await response.json();
+            return data.SysId; // Assuming the student's ID is stored in the SysId field
+        } catch (error) {
+            console.error(error);
+            return null; // Handle the error appropriately in your application
+        }
+        }
+
+        // Function to handle the "View Performance" button click
+        function viewPerformance(placementId) {
+        getUserId().then((studentId) => {
+            if (studentId) {
+            const performanceData = {
+                studentId,
+                placementId,
+            };
+            fetch('/api/submit-performance', {
+                method: 'POST',
+                headers: {
+                'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(performanceData),
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                if (data.message === 'Performance data submitted successfully') {
+                    alert('Performance data submitted successfully');
+                } else {
+                    alert('Failed to submit performance data');
+                }
+                })
+                .catch((error) => {
+                console.error(error);
+                });
+            } else {
+            alert('Failed to get the student ID');
+            }
+        });
+        }
+
+        // Function to handle resume upload and application submission
+        async function uploadResume(placementId) {
+            // Find the parent element of the clicked button
+            const clickedButton = document.activeElement;
+            const driveContainer = clickedButton.parentElement;
+
+            const fileInput = driveContainer.querySelector('.resume-upload');
+            fileInput.style.display = 'block';
+
+            fileInput.addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+
+                if (file) {
+                    const formData = new FormData();
+                    formData.append('studentId', await getUserId());
+                    formData.append('resume', file);
+
+                    fetch(`/api/upload-resume/${placementId}`, {
+                        method: 'POST',
+                        body: formData,
+                    })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (data.success) {
+                                alert('Resume uploaded and application submitted successfully');
+                            } else {
+                                alert(data.message);
+                            }
+                        })
+                        .catch((error) => {
+                            console.error(error);
+                        });
+                } else {
+                    alert('Please select a valid PDF or Word file.');
+                }
+            });
+        }
+
+
+        let studentId;
+
+        // Function to get the user's ID (student ID) from the server
+        async function getUserId() {
+        try {
+            const response = await fetch('/profile'); // Assuming this endpoint returns the student's data, including ID
+            const data = await response.json();
+            studentId = data.SysId; // Assuming the student's ID is stored in the SysId field
+            return studentId;
+        } catch (error) {
+            console.error(error);
+            studentId = null; // Handle the error appropriately in your application
+            return null;
+        }
+        }
+
+        // Load and display placement drives
+        getUserId().then(() => {
+        loadAndDisplayDrives('upcomingdrives', '/api/upcoming-placement-drives');
+        loadAndDisplayDrives('ongoingdrives', '/api/active-placement-drives');
+        loadAndDisplayDrives('endeddrives', '/api/ended-placement-drives');
+        });
+    </script>    
+</body>
+</html>

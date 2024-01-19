@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Placement Drives</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+        .drive-container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+        .drive-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        form{
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+            text-align: center;
+        }
+        label{
+            margin-top: 8px;
+        }
+        input, select{
+            margin-left: 10px;
+            margin-right: 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        #drive-table{
+            padding: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        button {
+            padding: 8px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            color: white;
+            background-color: #007BFF;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="drive-container">
+        <div class="drive-header">
+            <h1>Manage Placement Drives</h1>
+        </div>
+    </div>
+
+    <form id="createDriveForm">
+        <div style="display: flex; justify-content: space-between;">
+            <label for="driveName">Drive Name:</label>
+            <input type="text" id="driveName" placeholder="Drive Name" required>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <label for="startDate">Start Date:</label>
+            <input type="date" id="startDate" onfocus="setMinDate()" required>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <label for="endDate">End Date:</label>
+            <input type="date" id="endDate" onfocus="setMinDate()" required>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <label for="status">Status:</label>
+            <select id="status" required>
+                <option value="">Select Status</option>
+                <option value="Upcoming">Upcoming</option>
+                <option value="Active">Active</option>
+            </select>
+        </div>
+        <button type="submit" style="margin-right: 10px;">Create Drive</button>
+        <button type="reset">Clear Fields</button>
+    </form>
+
+    <div id="drive-table">
+    <h3>Available Placement Drives</h3>
+    <table id="driveList">
+        <thead>
+            <tr>
+                <th>Drive Name</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    </div>
+
+    <script>
+        function setMinDate() {
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+
+            const minDate = year + '-' + month + '-' + day;
+            document.getElementById('startDate').min = minDate;
+            document.getElementById('endDate').min = minDate;
+        }
+
+        document.getElementById('createDriveForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+    
+            const driveName = document.getElementById('driveName').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const status = document.getElementById('status').value;
+    
+            fetch('/api/drives', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: driveName, startDate, endDate, status }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Refresh the drive list
+                loadDrives();
+            });
+        });
+
+        function loadDrives() {
+            fetch('/api/drives')
+            .then(response => response.json())
+            .then(data => {
+                const driveList = document.querySelector('#driveList tbody');
+                driveList.innerHTML = '';
+    
+                data.forEach(drive => {
+                    const row = driveList.insertRow();
+                    row.innerHTML = `
+                        <td>${drive.name}</td>
+                        <td>${new Date(drive.startDate).toLocaleDateString()}</td>
+                        <td>${new Date(drive.endDate).toLocaleDateString()}</td>
+                        <td>${drive.status}</td>
+                        <td>
+                            <button class="delete-button" data-id="${drive._id}">Delete</button>
+                        </td>
+                    `;
+                });
+
+
+                // Inside the loadDrives() function
+                const deleteButtons = document.querySelectorAll('.delete-button');
+                deleteButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        console.log('Delete button clicked'); // Debugging: Check if delete button is clicked
+                        handleDeleteDrive.call(this); // Call your delete function
+                    });
+                });
+            });
+        }
+
+        function handleDeleteDrive() {
+            const driveId = this.getAttribute('data-id');
+        
+            console.log('Deleting Drive ID: ' + driveId); // Add this line for debugging
+
+            fetch(`/api/drives/${driveId}`, {
+                method: 'DELETE',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Drive deleted successfully.'); // Add this line for debugging
+                    loadDrives();
+                } else {
+                    console.error('Error deleting drive:', data.message); // Add this line for debugging
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error); // Add this line for debugging
+            });
+        }
+
+        // Load the drives when the page loads
+        loadDrives();
+    </script>
+</body>
+</html>

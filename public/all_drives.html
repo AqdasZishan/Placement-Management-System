@@ -1,0 +1,156 @@
+<!-- all_drives.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Placement Drives</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            text-align: center;
+        }
+
+        .drives-container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+
+        #drivesDetails {
+            padding: 20px;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        caption{
+            font-size: large;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            color: white;
+            background-color: #007BFF;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="drives-container">
+        <h1>Placement Drives Details</h1>
+    </div>
+    <div id="drivesDetails">
+        <!-- Placement drives details will be displayed here -->
+        <table id="drivesTable">
+            <!-- Placement drives list will be displayed here -->
+        </table>
+    </div>
+
+    <script>
+        // Fetch all placement drives details
+        fetch('/api/drives')
+            .then(response => response.json())
+            .then(data => {
+                const drivesTable = document.getElementById('drivesTable');
+                drivesTable.innerHTML = `
+                    <th>Name</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Status</th>
+                    <th>Number of Students Applied</th>
+                    <th>Action</th> <!-- Add this line for the action column -->
+                `;
+    
+                if (data.length > 0) {
+                    data.forEach(drive => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${drive.name}</td>
+                            <td>${new Date(drive.startDate).toLocaleDateString()}</td>
+                            <td>${new Date(drive.endDate).toLocaleDateString()}</td>
+                            <td>${drive.status}</td>
+                            <td>${drive.applications.length}</td>
+                            <td>
+                                <button onclick="showStudentDetails('${drive._id}', '${drive.name}')">Show Students</button>
+                            </td>
+                        `;
+                        drivesTable.appendChild(row);
+                    });
+                } else {
+                    document.getElementById('drivesDetails').innerHTML = 'No placement drives available.';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching placement drives:', error);
+                document.getElementById('drivesDetails').innerHTML = 'Error fetching placement drives.';
+            });
+    
+        // Function to show student details when the button is clicked
+        function showStudentDetails(placementId, driveName) {
+            fetch(`/api/drives/${placementId}/students`)
+                .then(response => response.json())
+                .then(data => {
+                    const drivesDetails = document.getElementById('drivesDetails');
+                    drivesDetails.innerHTML = ''; // Clear previous content
+                    drivesDetails.innerHTML = `<button onclick=location.reload()>All Drive Details</button>`;
+                    
+
+    
+                    if (data.success) {
+                        const studentsTable = document.createElement('table');
+                        studentsTable.innerHTML = `
+                            <caption>Drive Name: ${driveName}</caption>
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Student Name</th>
+                                <!-- Add more columns as needed -->
+                            </tr>
+                            ${data.students.map(student => `
+                                <tr>
+                                    <td>${student.studentId}</td>
+                                    <td>${student.studentName}</td>
+                                    <!-- Add more columns as needed -->
+                                </tr>
+                            `).join('')}
+                        `;
+                        drivesDetails.appendChild(studentsTable);
+                    } else {
+                        drivesDetails.innerHTML = 'Failed to fetch student details.';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching student details:', error);
+                    document.getElementById('drivesDetails').innerHTML = 'Error fetching student details.';
+                });
+        }
+    </script>
+    
+</body>
+</html>

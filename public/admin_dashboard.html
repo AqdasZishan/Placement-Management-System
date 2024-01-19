@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+        .dashboard-container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .dashboard-nav {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .dashboard-nav a {
+            text-decoration: none;
+            color: #007BFF;
+            margin: 0 20px;
+        }
+        .dashboard-content {
+            display: flex;
+            padding: 30px;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        img{
+            max-width: 200px;
+        }
+        .icon{
+            margin: 20px 40px;
+        }
+        p{
+            font-weight: bold ;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h1 id="studentName">Welcome, Admin</h1>
+        </div>
+        <div class="dashboard-nav">
+            <a href="search_student.html">Search Student</a>
+            <a href="update_placement_drives.html">Manage Placement Drives</a>
+            <a href="#" id="logoutButton">Logout</a>
+            <!--<a href="admin_notifications.html">Notifications</a>-->
+        </div>
+    </div>
+    <div class="dashboard-content">
+        <!-- Dashboard content will be loaded here -->
+        <div class="icon">
+            <a href="search_student.html"><img src="images/search-student-ico.png"></a>
+            <p>Search Student</p>
+        </div>
+        <div class="icon">
+            <a href="update_placement_drives.html"><img src="images/create-drive-ico.png"></a>
+            <p>Manage Placement Drives</p>
+        </div>
+        <div class="icon">
+            <a href="all_drives.html"><img src="images/all-drives-ico.png"></a>
+            <p>Placement Drives Details</p>
+        </div>
+    </div>
+</body>
+<script>
+    fetch('/admin_dashboard')
+  .then(response => response.json())
+  .then(data => {
+    // Update the view with the student's name
+    document.getElementById('studentName').innerHTML = 'Welcome, ' + data.studentName;
+  });
+
+  // Add an event listener to the logout button
+    document.getElementById('logoutButton').addEventListener('click', () => {
+        fetch('/logout')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Redirect to the admin login page after a successful logout
+                    window.location.href = 'login.html'; // Replace 'admin_login.html' with the actual admin login page URL
+                } else {
+                    console.error('Logout failed.');
+                }
+            })
+            .catch(error => {
+                console.error('Error during logout:', error);
+            });
+    });
+
+</script>
+</html>
